@@ -1,0 +1,42 @@
+name: Epic
+description: A major initiative composed of multiple child tickets
+labels: ["type:epic", "status:triage", "role:manager"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Epics group related work. Create child tickets (tasks/stories) that reference this epic with `Refs #N`.
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What is the goal of this epic?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope & child tickets
+      description: List the deliverables and planned child ticket titles.
+      placeholder: |
+        - [ ] C1 — ...
+        - [ ] C2 — ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] AC1: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: What is explicitly out of scope?
