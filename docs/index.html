@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Receipts API Dashboard</title>
+  <title>Receipts API + MCP Server</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -13,22 +13,83 @@
     details > summary { cursor: pointer; list-style: none; }
     details > summary::before { content: "▶ "; font-size: 0.75rem; }
     details[open] > summary::before { content: "▼ "; }
+
+    /* ── Nav tab active state ── */
+    .nav-tab { transition: background 0.15s, color 0.15s; }
+    .nav-tab.active { background: #fff; color: #4338ca; font-weight: 700; }
+    .nav-tab:not(.active) { color: #c7d2fe; }
+    .nav-tab:not(.active):hover { color: #fff; background: rgba(255,255,255,0.12); }
+
+    /* ── Architecture view ── */
+    .flow-col { display: flex; flex-direction: column; align-items: center; }
+    .flow-node {
+      width: 100%; padding: 10px 14px; border-radius: 10px;
+      text-align: center; font-size: 0.8rem; font-weight: 600;
+      border: 1.5px solid; position: relative;
+    }
+    .flow-arrow {
+      width: 2px; height: 22px; position: relative; flex-shrink: 0;
+    }
+    .flow-arrow::after {
+      content: ''; position: absolute; bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 7px solid currentColor;
+    }
+    .flow-label-line {
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.04em;
+      padding: 0 6px; white-space: nowrap;
+    }
+    .badge-v {
+      display: inline-block; font-size: 0.6rem; font-weight: 700;
+      padding: 1px 6px; border-radius: 999px; letter-spacing: 0.05em;
+    }
+    .tech-card { transition: transform 0.15s, box-shadow 0.15s; }
+    .tech-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px -4px rgba(99,102,241,0.18); }
+    pre.snippet {
+      background: #0f172a; color: #e2e8f0; border-radius: 10px;
+      padding: 16px; font-size: 0.78rem; overflow-x: auto; line-height: 1.6;
+      border: 1px solid #1e293b; tab-size: 2;
+    }
+    .snippet .key  { color: #93c5fd; }
+    .snippet .val  { color: #86efac; }
+    .snippet .cmt  { color: #64748b; font-style: italic; }
+    .endpoint-row:hover { background: #f0f4ff; }
+    .section-title {
+      font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #6366f1;
+      border-bottom: 2px solid #e0e7ff; padding-bottom: 6px; margin-bottom: 20px;
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen">
-  <header class="bg-indigo-700 text-white shadow">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-      <div>
-        <h1 class="text-xl font-bold tracking-tight">Receipts API Dashboard</h1>
-        <p class="text-indigo-200 text-sm">Live demo — data processed entirely in your browser, hosted on GitHub Pages</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <span id="mode-badge" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500 text-white">
-          ● Embedded data
-        </span>
-      </div>
+
+<!-- ═══════════════════════════ HEADER ═══════════════════════════ -->
+<header class="bg-indigo-700 text-white shadow sticky top-0 z-30">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight">Receipts API + MCP Server</h1>
+      <p class="text-indigo-200 text-sm">FastAPI · MCP · GitHub Pages · Python 3.11</p>
     </div>
-  </header>
+    <div class="flex items-center gap-3 flex-wrap">
+      <span id="mode-badge" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500 text-white">
+        ● Embedded data
+      </span>
+      <nav class="flex rounded-lg overflow-hidden border border-indigo-500" role="tablist" aria-label="View navigation">
+        <button id="nav-dashboard" role="tab" aria-selected="true" aria-controls="view-dashboard"
+          class="nav-tab active px-4 py-1.5 text-sm"
+          onclick="showView('dashboard')">Dashboard</button>
+        <button id="nav-arch" role="tab" aria-selected="false" aria-controls="view-arch"
+          class="nav-tab px-4 py-1.5 text-sm"
+          onclick="showView('arch')">Architecture</button>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════ DASHBOARD VIEW ═══════════════════════════ -->
+<div id="view-dashboard">
   <div class="bg-white border-b shadow-sm">
     <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-end gap-4">
       <div class="flex flex-col gap-1">
@@ -137,7 +198,515 @@
       <a href="https://github.com/chf3198/receipts-api-mcp#mcp-connection" class="underline hover:text-gray-600">MCP Docs</a>
     </span>
   </footer>
+</div><!-- /view-dashboard -->
+
+<!-- ═══════════════════════════ ARCHITECTURE VIEW ═══════════════════════════ -->
+<div id="view-arch" class="hidden pb-16">
+
+  <!-- ── At-a-glance metrics ── -->
+  <div class="max-w-6xl mx-auto px-4 mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl shadow p-5 border-t-4 border-indigo-500 text-center">
+      <p class="text-3xl font-black text-indigo-700">5</p>
+      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">REST Endpoints</p>
+      <p class="text-xs text-gray-400 mt-0.5">GET · read-only · CORS open</p>
+    </div>
+    <div class="bg-white rounded-xl shadow p-5 border-t-4 border-violet-500 text-center">
+      <p class="text-3xl font-black text-violet-700">5</p>
+      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">MCP Tools</p>
+      <p class="text-xs text-gray-400 mt-0.5">Streamable HTTP · spec 2025-03-26</p>
+    </div>
+    <div class="bg-white rounded-xl shadow p-5 border-t-4 border-green-500 text-center">
+      <p class="text-3xl font-black text-green-700">16</p>
+      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">Tests Passing</p>
+      <p class="text-xs text-gray-400 mt-0.5">pytest · httpx · TestClient</p>
+    </div>
+    <div class="bg-white rounded-xl shadow p-5 border-t-4 border-amber-500 text-center">
+      <p class="text-3xl font-black text-amber-700">40</p>
+      <p class="text-xs text-gray-500 font-semibold uppercase tracking-wide mt-1">Sample Records</p>
+      <p class="text-xs text-gray-400 mt-0.5">2 CSV files · Jan–Feb 2025</p>
+    </div>
+  </div>
+
+  <!-- ── System Architecture ── -->
+  <div class="max-w-6xl mx-auto px-4 mt-10">
+    <h2 class="section-title">System Architecture</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Always-On tier -->
+      <div class="bg-white rounded-xl shadow border border-emerald-100 p-6">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-sm font-bold text-emerald-700">Always-On · Zero Setup · No Server</span>
+        </div>
+        <div class="flow-col">
+          <div class="flow-node bg-slate-50 border-slate-300 text-slate-700">
+            🌐 Any Browser
+          </div>
+          <div class="flow-arrow text-slate-400 my-0.5"></div>
+          <div class="flow-node bg-emerald-50 border-emerald-300 text-emerald-800">
+            <div class="font-bold">GitHub Pages CDN</div>
+            <div class="text-xs font-normal text-emerald-600 mt-0.5">chf3198.github.io/receipts-api-mcp</div>
+          </div>
+          <div class="flow-arrow text-slate-400 my-0.5"></div>
+          <div class="flow-node bg-indigo-50 border-indigo-200 text-indigo-800">
+            <div class="font-bold">index.html</div>
+            <div class="text-xs font-normal text-indigo-500 mt-0.5">Papa Parse 5.4.1 · Chart.js 4.4.3 · Tailwind</div>
+          </div>
+          <div class="flow-arrow text-slate-400 my-0.5"></div>
+          <div class="flow-node bg-amber-50 border-amber-200 text-amber-800">
+            <div class="font-bold">Static CSV Data</div>
+            <div class="text-xs font-normal text-amber-600 mt-0.5">
+              data/receipts_2025_01.csv<br>data/receipts_2025_02.csv
+            </div>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-4 text-center">
+          All filtering, grouping, and charting runs client-side — zero server cost.
+        </p>
+      </div>
+
+      <!-- Optional Server tier -->
+      <div class="bg-white rounded-xl shadow border border-violet-100 p-6">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="h-2.5 w-2.5 rounded-full bg-violet-400"></span>
+          <span class="text-sm font-bold text-violet-700">Optional Server · <code class="font-mono text-xs">uv run receipts-api</code></span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div class="flow-node bg-slate-50 border-slate-300 text-slate-700 text-xs">
+            🔧 REST Client<br><span class="font-normal text-slate-500">curl / Postman / Dashboard</span>
+          </div>
+          <div class="flow-node bg-violet-50 border-violet-300 text-violet-800 text-xs">
+            🤖 LLM Client<br><span class="font-normal text-violet-500">Claude · Cursor · VS Code</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-1">
+          <div class="text-center">
+            <span class="flow-label-line text-slate-500">HTTP/JSON</span>
+            <div class="flow-arrow text-slate-400 mx-auto my-0.5"></div>
+            <span class="flow-label-line text-slate-400 text-xs">/receipts/*</span>
+          </div>
+          <div class="text-center">
+            <span class="flow-label-line text-violet-500">Streamable HTTP</span>
+            <div class="flow-arrow text-violet-400 mx-auto my-0.5"></div>
+            <span class="flow-label-line text-violet-400 text-xs">/mcp</span>
+          </div>
+        </div>
+        <div class="flow-col mt-1">
+          <div class="flow-node bg-indigo-50 border-indigo-300 text-indigo-900 w-full">
+            <div class="font-bold">FastAPI 0.136.3</div>
+            <div class="text-xs font-normal text-indigo-500 mt-0.5">
+              Starlette · Pydantic v2 · Uvicorn
+            </div>
+            <div class="mt-1.5 flex justify-center gap-2">
+              <span class="badge-v bg-indigo-100 text-indigo-700">5 routes</span>
+              <span class="badge-v bg-violet-100 text-violet-700">FastApiMCP 0.4.0</span>
+            </div>
+          </div>
+          <div class="flow-arrow text-slate-400 my-0.5"></div>
+          <div class="flow-node bg-amber-50 border-amber-200 text-amber-800">
+            <div class="font-bold">RECEIPTS — in-memory list</div>
+            <div class="text-xs font-normal text-amber-600 mt-0.5">loaded at startup · 40 records</div>
+          </div>
+          <div class="flow-arrow text-slate-400 my-0.5"></div>
+          <div class="flow-node bg-gray-50 border-gray-200 text-gray-700 text-xs">
+            data/receipts_2025_01.csv &nbsp;+&nbsp; data/receipts_2025_02.csv
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-4 text-center">
+          MCP and REST share the same FastAPI app instance — <em>zero duplication</em>.
+        </p>
+      </div>
+    </div>
+
+    <!-- MCP key insight callout -->
+    <div class="mt-4 bg-violet-50 border border-violet-200 rounded-xl px-5 py-4 flex gap-3 items-start">
+      <span class="text-violet-500 text-xl mt-0.5">⚡</span>
+      <div>
+        <p class="text-sm font-bold text-violet-800">fastapi-mcp: zero-config MCP server</p>
+        <p class="text-sm text-violet-700 mt-0.5">
+          <code class="bg-violet-100 px-1 rounded font-mono text-xs">FastApiMCP(app).mount_http()</code>
+          — that single line introspects the FastAPI OpenAPI schema and exposes every route as a
+          typed MCP tool at <code class="bg-violet-100 px-1 rounded font-mono text-xs">/mcp</code>.
+          No schema files to write. No separate server process. Authentication reuses FastAPI's
+          <code class="bg-violet-100 px-1 rounded font-mono text-xs">Depends()</code> system.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tech Stack ── -->
+  <div class="max-w-6xl mx-auto px-4 mt-10">
+    <h2 class="section-title">Tech Stack</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+      <!-- API Layer -->
+      <div class="tech-card bg-white rounded-xl shadow border border-indigo-100 p-5 flex flex-col gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-base">🐍</span>
+            <span class="font-bold text-gray-800 text-sm">API Layer</span>
+          </div>
+          <p class="text-xs text-gray-500">Core server runtime</p>
+        </div>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">Python</span>
+            <span class="badge-v bg-blue-100 text-blue-700">3.11</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">FastAPI</span>
+            <span class="badge-v bg-indigo-100 text-indigo-700">0.136.3</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">Uvicorn</span>
+            <span class="badge-v bg-slate-100 text-slate-600">≥0.30</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">Pydantic</span>
+            <span class="badge-v bg-red-100 text-red-600">v2</span>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-auto">
+          Auto-generates OpenAPI 3.1 docs at <code>/docs</code>.
+          CORS open on all GET routes.
+        </p>
+      </div>
+
+      <!-- MCP Layer -->
+      <div class="tech-card bg-white rounded-xl shadow border border-violet-100 p-5 flex flex-col gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-base">🔌</span>
+            <span class="font-bold text-gray-800 text-sm">MCP Layer</span>
+          </div>
+          <p class="text-xs text-gray-500">Model Context Protocol</p>
+        </div>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">fastapi-mcp</span>
+            <span class="badge-v bg-violet-100 text-violet-700">0.4.0</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">Transport</span>
+            <span class="badge-v bg-purple-100 text-purple-700">Streamable HTTP</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">Spec</span>
+            <span class="badge-v bg-slate-100 text-slate-600">2025-03-26</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">GitHub Stars</span>
+            <span class="badge-v bg-yellow-100 text-yellow-700">★ 12k+</span>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-auto">
+          Compatible: Claude Desktop, Cursor, VS Code Copilot, ChatGPT (MCP plug-in).
+        </p>
+      </div>
+
+      <!-- Frontend Layer -->
+      <div class="tech-card bg-white rounded-xl shadow border border-emerald-100 p-5 flex flex-col gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-base">📊</span>
+            <span class="font-bold text-gray-800 text-sm">Frontend</span>
+          </div>
+          <p class="text-xs text-gray-500">GitHub Pages · no build step</p>
+        </div>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">Papa Parse</span>
+            <span class="badge-v bg-emerald-100 text-emerald-700">5.4.1</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">Chart.js</span>
+            <span class="badge-v bg-pink-100 text-pink-700">4.4.3</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">Tailwind CSS</span>
+            <span class="badge-v bg-cyan-100 text-cyan-700">Play CDN</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">JS Runtime</span>
+            <span class="badge-v bg-yellow-100 text-yellow-700">ES2020+</span>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-auto">
+          All CSV parsing, filtering, grouping, and charting runs in-browser.
+          Zero backend dependency.
+        </p>
+      </div>
+
+      <!-- Toolchain -->
+      <div class="tech-card bg-white rounded-xl shadow border border-amber-100 p-5 flex flex-col gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-base">🛠</span>
+            <span class="font-bold text-gray-800 text-sm">Toolchain</span>
+          </div>
+          <p class="text-xs text-gray-500">Dev & CI pipeline</p>
+        </div>
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">uv</span>
+            <span class="badge-v bg-amber-100 text-amber-700">0.11.19</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">ruff</span>
+            <span class="badge-v bg-orange-100 text-orange-700">linter + fmt</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">pytest + httpx</span>
+            <span class="badge-v bg-green-100 text-green-700">16 tests</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-700">GitHub Actions</span>
+            <span class="badge-v bg-gray-100 text-gray-600">CI + Pages</span>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 mt-auto">
+          <code>uv sync</code> → <code>ruff check</code> → <code>pytest -v</code>
+          on every PR. Pages deploy on every push to master.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REST API Endpoints ── -->
+  <div class="max-w-6xl mx-auto px-4 mt-10">
+    <h2 class="section-title">REST API Endpoints</h2>
+    <div class="bg-white rounded-xl shadow overflow-x-auto border border-gray-100">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="bg-indigo-50 text-indigo-800 text-xs uppercase tracking-wide">
+            <th class="px-5 py-3 text-left font-bold">Method</th>
+            <th class="px-5 py-3 text-left font-bold">Endpoint</th>
+            <th class="px-5 py-3 text-left font-bold">Description</th>
+            <th class="px-5 py-3 text-left font-bold">Key Parameters</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr class="endpoint-row">
+            <td class="px-5 py-3"><span class="badge-v bg-emerald-100 text-emerald-700">GET</span></td>
+            <td class="px-5 py-3 font-mono text-xs text-indigo-700 font-semibold">/receipts</td>
+            <td class="px-5 py-3 text-gray-600">List all receipts with optional filtering</td>
+            <td class="px-5 py-3 text-xs text-gray-500 font-mono">company, product_category,<br>purchase_date_from, purchase_date_to, status</td>
+          </tr>
+          <tr class="endpoint-row">
+            <td class="px-5 py-3"><span class="badge-v bg-emerald-100 text-emerald-700">GET</span></td>
+            <td class="px-5 py-3 font-mono text-xs text-indigo-700 font-semibold">/receipts/stats</td>
+            <td class="px-5 py-3 text-gray-600">Grouped aggregates — revenue, count, avg, min, max</td>
+            <td class="px-5 py-3 text-xs text-gray-500 font-mono">group_by (company | product_category<br>| company,product_category)</td>
+          </tr>
+          <tr class="endpoint-row">
+            <td class="px-5 py-3"><span class="badge-v bg-emerald-100 text-emerald-700">GET</span></td>
+            <td class="px-5 py-3 font-mono text-xs text-indigo-700 font-semibold">/receipts/companies</td>
+            <td class="px-5 py-3 text-gray-600">Distinct company names</td>
+            <td class="px-5 py-3 text-xs text-gray-400">—</td>
+          </tr>
+          <tr class="endpoint-row">
+            <td class="px-5 py-3"><span class="badge-v bg-emerald-100 text-emerald-700">GET</span></td>
+            <td class="px-5 py-3 font-mono text-xs text-indigo-700 font-semibold">/receipts/categories</td>
+            <td class="px-5 py-3 text-gray-600">Distinct product category names</td>
+            <td class="px-5 py-3 text-xs text-gray-400">—</td>
+          </tr>
+          <tr class="endpoint-row">
+            <td class="px-5 py-3"><span class="badge-v bg-emerald-100 text-emerald-700">GET</span></td>
+            <td class="px-5 py-3 font-mono text-xs text-indigo-700 font-semibold">/receipts/{receipt_id}</td>
+            <td class="px-5 py-3 text-gray-600">Single receipt by ID · 404 if not found</td>
+            <td class="px-5 py-3 text-xs text-gray-500 font-mono">receipt_id (path param)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-xs text-gray-400 mt-2 px-1">
+      All endpoints: read-only · CORS <code>allow_origins=["*"]</code> · <code>allow_methods=["GET"]</code> ·
+      Interactive docs at <code>/docs</code> (Swagger UI) and <code>/redoc</code>.
+    </p>
+  </div>
+
+  <!-- ── MCP Integration ── -->
+  <div class="max-w-6xl mx-auto px-4 mt-10">
+    <h2 class="section-title">MCP Integration</h2>
+    <div class="bg-violet-50 border border-violet-200 rounded-xl px-5 py-4 mb-5">
+      <p class="text-sm font-semibold text-violet-800 mb-1">What is MCP?</p>
+      <p class="text-sm text-violet-700">
+        The <strong>Model Context Protocol</strong> is an open standard (Anthropic / Linux Foundation) that lets
+        LLM clients connect to external tools and data sources through a uniform interface —
+        often called the "USB-C port for AI". Once connected, Claude or Cursor can call
+        <code class="bg-violet-100 px-1 rounded font-mono text-xs">list_receipts</code>,
+        <code class="bg-violet-100 px-1 rounded font-mono text-xs">get_receipt_stats</code>, and the other
+        tools directly using natural language.
+      </p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Claude Desktop -->
+      <div class="bg-white rounded-xl shadow border border-gray-100 p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-base">🖥</span>
+          <span class="font-bold text-gray-800">Claude Desktop</span>
+          <a href="https://modelcontextprotocol.io/quickstart/user" target="_blank" rel="noopener"
+            class="ml-auto text-xs text-indigo-500 hover:underline">quickstart ↗</a>
+        </div>
+        <p class="text-xs text-gray-500 mb-3">
+          Edit <code class="bg-gray-100 px-1 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code>
+          (macOS) or <code class="bg-gray-100 px-1 rounded">%APPDATA%\Claude\claude_desktop_config.json</code> (Windows):
+        </p>
+        <pre class="snippet">{
+  <span class="key">"mcpServers"</span>: {
+    <span class="key">"receipts"</span>: {
+      <span class="key">"type"</span>:    <span class="val">"streamableHttp"</span>,
+      <span class="key">"url"</span>:     <span class="val">"http://localhost:8000/mcp"</span>
+    }
+  }
+}</pre>
+        <p class="text-xs text-gray-400 mt-2">Restart Claude Desktop · look for the 🔌 tools indicator.</p>
+      </div>
+
+      <!-- Cursor / VS Code -->
+      <div class="bg-white rounded-xl shadow border border-gray-100 p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-base">⚡</span>
+          <span class="font-bold text-gray-800">Cursor · VS Code Copilot</span>
+          <a href="https://docs.cursor.com/context/model-context-protocol" target="_blank" rel="noopener"
+            class="ml-auto text-xs text-indigo-500 hover:underline">docs ↗</a>
+        </div>
+        <p class="text-xs text-gray-500 mb-3">
+          Add to <code class="bg-gray-100 px-1 rounded">.cursor/mcp.json</code> (Cursor) or VS Code
+          <code class="bg-gray-100 px-1 rounded">settings.json</code> under <code class="bg-gray-100 px-1 rounded">mcp.servers</code>:
+        </p>
+        <pre class="snippet">{
+  <span class="key">"receipts"</span>: {
+    <span class="key">"type"</span>:    <span class="val">"streamableHttp"</span>,
+    <span class="key">"url"</span>:     <span class="val">"http://localhost:8000/mcp"</span>
+  }
+}
+
+<span class="cmt">// Start server first:</span>
+<span class="cmt">// uv run receipts-api</span>
+<span class="cmt">// → listening on http://localhost:8000</span></pre>
+        <p class="text-xs text-gray-400 mt-2">Tools appear automatically in agent mode.</p>
+      </div>
+    </div>
+
+    <!-- Why Streamable HTTP -->
+    <div class="mt-4 bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-sm text-slate-600">
+      <strong class="text-slate-800">Transport note:</strong> This server uses
+      <strong>Streamable HTTP</strong> (MCP spec 2025-03-26), which supersedes the
+      earlier SSE-based transport. It supports both request/response and streaming
+      over a single HTTP connection with no persistent WebSocket required.
+      The server remains stateless-friendly and horizontally scalable.
+    </div>
+  </div>
+
+  <!-- ── Data Model ── -->
+  <div class="max-w-6xl mx-auto px-4 mt-10">
+    <h2 class="section-title">Data Model</h2>
+    <div class="bg-white rounded-xl shadow border border-gray-100 overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
+            <th class="px-5 py-3 text-left font-bold">Column</th>
+            <th class="px-5 py-3 text-left font-bold">Type</th>
+            <th class="px-5 py-3 text-left font-bold">Description</th>
+            <th class="px-5 py-3 text-left font-bold">Sample</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 text-xs">
+          <tr class="endpoint-row"><td class="px-5 py-2 font-mono font-semibold text-indigo-700">receipt_id</td><td class="px-5 py-2 text-gray-500">string</td><td class="px-5 py-2 text-gray-600">Unique identifier</td><td class="px-5 py-2 text-gray-400 font-mono">REC-2025-0001</td></tr>
+          <tr class="endpoint-row"><td class="px-5 py-2 font-mono font-semibold text-indigo-700">receipt_date</td><td class="px-5 py-2 text-gray-500">ISO 8601</td><td class="px-5 py-2 text-gray-600">Transaction date</td><td class="px-5 py-2 text-gray-400 font-mono">2025-01-03</td></tr>
+          <tr class="endpoint-row"><td class="px-5 py-2 font-mono font-semibold text-indigo-700">company</td><td class="px-5 py-2 text-gray-500">string</td><td class="px-5 py-2 text-gray-600">Vendor / supplier name</td><td class="px-5 py-2 text-gray-400 font-mono">Northstar Software Co.</td></tr>
+          <tr class="endpoint-row"><td class="px-5 py-2 font-mono font-semibold text-indigo-700">product_category</td><td class="px-5 py-2 text-gray-500">string</td><td class="px-5 py-2 text-gray-600">Category of goods/services</td><td class="px-5 py-2 text-gray-400 font-mono">Software Licenses</td></tr>
+          <tr class="endpoint-row"><td class="px-5 py-2 font-mono font-semibold text-indigo-700">quantity</td><td class="px-5 py-2 text-gray-500">int</td><td class="px-5 py-2 text-gray-600">Units purchased</td><td class="px-5 py-2 text-gray-400 font-mono">3</td></tr>
+          <tr class="endpoint-row"><td class="px-5 py-2 font-mono font-semibold text-indigo-700">unit_price_usd</td><td class="px-5 py-2 text-gray-500">float</td><td class="px-5 py-2 text-gray-600">Price per unit</td><td class="px-5 py-2 text-gray-400 font-mono">149.99</td></tr>
+          <tr class="endpoint-row"><td class="px-5 py-2 font-mono font-semibold text-indigo-700">discount_usd</td><td class="px-5 py-2 text-gray-500">float</td><td class="px-5 py-2 text-gray-600">Discount applied</td><td class="px-5 py-2 text-gray-400 font-mono">22.50</td></tr>
+          <tr class="endpoint-row"><td class="px-5 py-2 font-mono font-semibold text-indigo-700">tax_usd</td><td class="px-5 py-2 text-gray-500">float</td><td class="px-5 py-2 text-gray-600">Tax charged</td><td class="px-5 py-2 text-gray-400 font-mono">35.87</td></tr>
+          <tr class="endpoint-row"><td class="px-5 py-2 font-mono font-semibold text-indigo-700">total_usd</td><td class="px-5 py-2 text-gray-500">float</td><td class="px-5 py-2 text-gray-600">Final amount charged</td><td class="px-5 py-2 text-gray-400 font-mono">463.34</td></tr>
+          <tr class="endpoint-row"><td class="px-5 py-2 font-mono font-semibold text-indigo-700">status</td><td class="px-5 py-2 text-gray-500">enum</td><td class="px-5 py-2 text-gray-600">Payment status</td><td class="px-5 py-2 text-gray-400 font-mono">paid | pending | refunded</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Development Approach ── -->
+  <div class="max-w-6xl mx-auto px-4 mt-10">
+    <h2 class="section-title">Development Approach</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+      <div class="tech-card bg-white rounded-xl shadow border border-gray-100 p-5">
+        <div class="text-base mb-2">📐</div>
+        <h3 class="font-bold text-gray-800 text-sm mb-2">AI-Governed Workflow</h3>
+        <p class="text-xs text-gray-600 leading-relaxed">
+          Built using the <strong>Megingjord Harness</strong> — an AI-agent governance framework
+          that enforces a four-phase baton: <strong>Manager → Collaborator → Admin → Consultant</strong>
+          on every change. Each phase emits a signed artifact before the next role activates,
+          creating an auditable chain of custody.
+        </p>
+        <a href="https://github.com/chf3198/receipts-api-mcp/issues" target="_blank" rel="noopener"
+          class="inline-block mt-3 text-xs text-indigo-500 hover:underline">
+          View issue tracker (27 tickets) ↗
+        </a>
+      </div>
+
+      <div class="tech-card bg-white rounded-xl shadow border border-gray-100 p-5">
+        <div class="text-base mb-2">🔄</div>
+        <h3 class="font-bold text-gray-800 text-sm mb-2">CI / CD Pipeline</h3>
+        <p class="text-xs text-gray-600 leading-relaxed">
+          Every PR triggers GitHub Actions:
+        </p>
+        <ol class="text-xs text-gray-600 mt-2 space-y-1 list-decimal list-inside">
+          <li>Governance presence check</li>
+          <li><code class="bg-gray-100 px-1 rounded">uv sync --extra dev</code></li>
+          <li><code class="bg-gray-100 px-1 rounded">ruff check .</code> (E, F, I, UP)</li>
+          <li><code class="bg-gray-100 px-1 rounded">pytest -v</code> (16 tests)</li>
+        </ol>
+        <p class="text-xs text-gray-500 mt-2">
+          Dashboard deploys to GitHub Pages on every push to master.
+        </p>
+      </div>
+
+      <div class="tech-card bg-white rounded-xl shadow border border-gray-100 p-5">
+        <div class="text-base mb-2">🎯</div>
+        <h3 class="font-bold text-gray-800 text-sm mb-2">Design Decisions</h3>
+        <ul class="text-xs text-gray-600 space-y-1.5 leading-relaxed">
+          <li><strong>Read-only API</strong> — safe to expose with open CORS for demo purposes</li>
+          <li><strong>In-memory data</strong> — CSV loaded at startup; no DB dependency needed for demo scale</li>
+          <li><strong>Client-side dashboard</strong> — GitHub Pages for zero hosting cost and zero downtime</li>
+          <li><strong>fastapi-mcp over custom MCP</strong> — 3 lines vs. ~300; avoids schema drift between REST + MCP layers</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer for arch view -->
+  <footer class="max-w-6xl mx-auto px-4 py-6 mt-6 text-xs text-gray-400 flex flex-wrap gap-4 justify-between border-t border-gray-100">
+    <span>Receipts API + MCP Server · take-home project</span>
+    <span>
+      <a href="https://github.com/chf3198/receipts-api-mcp" class="underline hover:text-gray-600">GitHub Repo</a>
+      &nbsp;·&nbsp;
+      <a href="https://fastapi.tiangolo.com" target="_blank" rel="noopener" class="underline hover:text-gray-600">FastAPI docs</a>
+      &nbsp;·&nbsp;
+      <a href="https://github.com/tadata-org/fastapi_mcp" target="_blank" rel="noopener" class="underline hover:text-gray-600">fastapi-mcp</a>
+      &nbsp;·&nbsp;
+      <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener" class="underline hover:text-gray-600">MCP spec</a>
+    </span>
+  </footer>
+</div><!-- /view-arch -->
+
+<!-- ═══════════════════════════ SCRIPTS ═══════════════════════════ -->
 <script>
+// ── View navigation ──
+function showView(name) {
+  ['dashboard', 'arch'].forEach(v => {
+    document.getElementById('view-' + v).classList.toggle('hidden', v !== name);
+    const btn = document.getElementById('nav-' + v);
+    btn.classList.toggle('active', v === name);
+    btn.setAttribute('aria-selected', v === name ? 'true' : 'false');
+  });
+}
+
+// ── Dashboard logic ──
 const CSV_FILES = ['data/receipts_2025_01.csv', 'data/receipts_2025_02.csv'];
 const COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#14b8a6','#f97316','#ec4899','#64748b','#a3e635','#06b6d4','#d946ef','#fb923c','#22c55e'];
 let ALL_ROWS = [], liveApiBase = null, barChart = null, doughnutChart = null;
@@ -297,7 +866,7 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     const dates = ALL_ROWS.map(r=>r.receipt_date).filter(Boolean).sort();
     const minDate = dates[0], maxDate = dates[dates.length-1];
     ['date-from','date-to'].forEach(id=>{
-      $( id).min = minDate;
+      $(id).min = minDate;
       $(id).max = maxDate;
     });
     await refresh();
