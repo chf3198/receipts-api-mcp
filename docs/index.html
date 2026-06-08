@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Receipts API Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    .chart-container { position: relative; height: 320px; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-indigo-700 text-white shadow">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div>
+        <h1 class="text-xl font-bold tracking-tight">Receipts API Dashboard</h1>
+        <p class="text-indigo-200 text-sm">Live statistics from the receipts-api-mcp server</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="status-dot" class="inline-block w-2.5 h-2.5 rounded-full bg-gray-300"></span>
+        <span id="status-label" class="text-sm text-indigo-100">Disconnected</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Config bar -->
+  <div class="bg-white border-b shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-end gap-4">
+
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="api-base">API Base URL</label>
+        <input id="api-base" type="url" value="http://localhost:8000"
+          class="border rounded px-2 py-1 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="group-by">Group By</label>
+        <select id="group-by" class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          <option value="company">Company</option>
+          <option value="product_category">Category</option>
+          <option value="company,product_category">Company + Category</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="filter-company">Company</label>
+        <select id="filter-company" class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          <option value="">All</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="filter-category">Category</label>
+        <select id="filter-category" class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          <option value="">All</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="date-from">From</label>
+        <input id="date-from" type="date" class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="date-to">To</label>
+        <input id="date-to" type="date" class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+
+      <button id="load-btn"
+        class="mt-auto px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded shadow transition">
+        Load
+      </button>
+    </div>
+  </div>
+
+  <!-- Error banner -->
+  <div id="error-banner" class="hidden max-w-6xl mx-auto mt-4 px-4">
+    <div class="bg-red-50 border border-red-300 text-red-700 rounded px-4 py-3 text-sm flex justify-between items-start gap-2">
+      <span id="error-msg"></span>
+      <button onclick="document.getElementById('error-banner').classList.add('hidden')" class="text-red-400 hover:text-red-600 font-bold leading-none">&times;</button>
+    </div>
+  </div>
+
+  <!-- KPI cards -->
+  <div id="kpi-row" class="hidden max-w-6xl mx-auto px-4 mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-indigo-500">
+      <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Receipts</p>
+      <p id="kpi-count" class="text-2xl font-bold text-indigo-700 mt-1">—</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+      <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Total Revenue</p>
+      <p id="kpi-total" class="text-2xl font-bold text-green-700 mt-1">—</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
+      <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Avg Order</p>
+      <p id="kpi-avg" class="text-2xl font-bold text-yellow-700 mt-1">—</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-pink-500">
+      <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Total Discounts</p>
+      <p id="kpi-disc" class="text-2xl font-bold text-pink-700 mt-1">—</p>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div id="charts-row" class="hidden max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white rounded-lg shadow p-4">
+      <h2 class="text-sm font-semibold text-gray-600 mb-3">Total Revenue by Group (USD)</h2>
+      <div class="chart-container"><canvas id="bar-chart"></canvas></div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+      <h2 class="text-sm font-semibold text-gray-600 mb-3">Receipt Count by Group</h2>
+      <div class="chart-container"><canvas id="doughnut-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div id="table-wrap" class="hidden max-w-6xl mx-auto px-4 mt-6 mb-10">
+    <div class="bg-white rounded-lg shadow overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs tracking-wide">
+          <tr id="table-head"></tr>
+        </thead>
+        <tbody id="table-body" class="divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div id="empty-state" class="max-w-6xl mx-auto px-4 mt-16 text-center text-gray-400">
+    <svg class="mx-auto mb-4 w-12 h-12 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+        d="M9 17v-2a4 4 0 00-4-4H3m18 0h-2a4 4 0 00-4 4v2m-6 4h6m-9-4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+    </svg>
+    <p class="font-medium">Enter your API base URL and press <strong>Load</strong></p>
+    <p class="text-sm mt-1">Make sure the receipts API is running locally: <code class="bg-gray-100 px-1 rounded">uv run receipts-api</code></p>
+  </div>
+
+<script>
+// ─── state ───────────────────────────────────────────────────────────────────
+let barChart = null;
+let doughnutChart = null;
+
+const $ = id => document.getElementById(id);
+
+// ─── palette ─────────────────────────────────────────────────────────────────
+const COLORS = [
+  '#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6',
+  '#8b5cf6','#14b8a6','#f97316','#ec4899','#64748b',
+  '#a3e635','#06b6d4','#d946ef','#fb923c','#22c55e',
+];
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
+function fmtUSD(n) {
+  return n == null ? '—' : '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function showError(msg) {
+  $('error-msg').textContent = msg;
+  $('error-banner').classList.remove('hidden');
+}
+
+function setStatus(connected) {
+  const dot = $('status-dot');
+  const lbl = $('status-label');
+  dot.className = `inline-block w-2.5 h-2.5 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`;
+  lbl.textContent = connected ? 'Connected' : 'Disconnected';
+}
+
+function buildLabel(row, groupBy) {
+  const parts = [];
+  if (groupBy.includes('company') && row.company) parts.push(row.company);
+  if (groupBy.includes('product_category') && row.product_category) parts.push(row.product_category);
+  return parts.join(' / ') || 'All';
+}
+
+// ─── populate filter dropdowns ───────────────────────────────────────────────
+async function populateFilters(base) {
+  try {
+    const [compRes, catRes] = await Promise.all([
+      fetch(`${base}/receipts/companies`),
+      fetch(`${base}/receipts/categories`),
+    ]);
+    if (!compRes.ok || !catRes.ok) return;
+    const companies = await compRes.json();
+    const categories = await catRes.json();
+
+    const compSel = $('filter-company');
+    const catSel  = $('filter-category');
+    const prevComp = compSel.value;
+    const prevCat  = catSel.value;
+
+    // rebuild options (keep "All" first)
+    compSel.innerHTML = '<option value="">All</option>';
+    companies.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c; o.textContent = c;
+      if (c === prevComp) o.selected = true;
+      compSel.appendChild(o);
+    });
+
+    catSel.innerHTML = '<option value="">All</option>';
+    categories.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c; o.textContent = c;
+      if (c === prevCat) o.selected = true;
+      catSel.appendChild(o);
+    });
+  } catch (_) { /* silent — API might not be up yet */ }
+}
+
+// ─── main load ───────────────────────────────────────────────────────────────
+async function loadData() {
+  $('error-banner').classList.add('hidden');
+  const base    = $('api-base').value.replace(/\/+$/, '');
+  const groupBy = $('group-by').value;
+  const company = $('filter-company').value;
+  const cat     = $('filter-category').value;
+  const from    = $('date-from').value;
+  const to      = $('date-to').value;
+
+  const params = new URLSearchParams({ group_by: groupBy });
+  if (company) params.set('company', company);
+  if (cat)     params.set('product_category', cat);
+  if (from)    params.set('purchase_date_from', from);
+  if (to)      params.set('purchase_date_to', to);
+
+  let data;
+  try {
+    const res = await fetch(`${base}/receipts/stats?${params}`);
+    if (!res.ok) { showError(`API error ${res.status}: ${await res.text()}`); setStatus(false); return; }
+    data = await res.json();
+    setStatus(true);
+  } catch (e) {
+    showError(`Could not reach API at ${base}. Is the server running?`);
+    setStatus(false);
+    return;
+  }
+
+  await populateFilters(base);
+
+  if (!data.length) {
+    showError('No data returned for the selected filters.');
+    return;
+  }
+
+  renderKPIs(data);
+  renderCharts(data, groupBy);
+  renderTable(data, groupBy);
+
+  $('empty-state').classList.add('hidden');
+  $('kpi-row').classList.remove('hidden');
+  $('charts-row').classList.remove('hidden');
+  $('table-wrap').classList.remove('hidden');
+}
+
+// ─── KPI cards ───────────────────────────────────────────────────────────────
+function renderKPIs(data) {
+  const totalCount = data.reduce((s, r) => s + (r.receipt_count || 0), 0);
+  const totalRev   = data.reduce((s, r) => s + (r.sum_total_usd || 0), 0);
+  const totalDisc  = data.reduce((s, r) => s + (r.sum_discount_usd || 0), 0);
+  const avgOrder   = totalCount ? totalRev / totalCount : 0;
+
+  $('kpi-count').textContent = totalCount.toLocaleString();
+  $('kpi-total').textContent = fmtUSD(totalRev);
+  $('kpi-avg').textContent   = fmtUSD(avgOrder);
+  $('kpi-disc').textContent  = fmtUSD(totalDisc);
+}
+
+// ─── charts ──────────────────────────────────────────────────────────────────
+function renderCharts(data, groupBy) {
+  const labels  = data.map(r => buildLabel(r, groupBy));
+  const revenue = data.map(r => +(r.sum_total_usd || 0).toFixed(2));
+  const counts  = data.map(r => r.receipt_count || 0);
+  const bgColors = labels.map((_, i) => COLORS[i % COLORS.length]);
+
+  // Bar chart
+  if (barChart) barChart.destroy();
+  barChart = new Chart($('bar-chart'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Total Revenue (USD)', data: revenue, backgroundColor: bgColors, borderRadius: 4 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { ticks: { callback: v => '$' + v.toLocaleString() } } },
+    },
+  });
+
+  // Doughnut chart
+  if (doughnutChart) doughnutChart.destroy();
+  doughnutChart = new Chart($('doughnut-chart'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: counts, backgroundColor: bgColors, hoverOffset: 8 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } },
+    },
+  });
+}
+
+// ─── table ───────────────────────────────────────────────────────────────────
+function renderTable(data, groupBy) {
+  const COLS = [
+    { key: 'label',               label: 'Group' },
+    { key: 'receipt_count',       label: 'Count' },
+    { key: 'sum_total_usd',       label: 'Total Rev' },
+    { key: 'avg_total_usd',       label: 'Avg Order' },
+    { key: 'min_total_usd',       label: 'Min' },
+    { key: 'max_total_usd',       label: 'Max' },
+    { key: 'sum_discount_usd',    label: 'Discounts' },
+    { key: 'sum_tax_usd',         label: 'Tax' },
+    { key: 'sum_unit_price_usd',  label: 'Unit Price' },
+  ];
+
+  // add label field
+  const rows = data.map(r => ({ ...r, label: buildLabel(r, groupBy) }));
+
+  const head = $('table-head');
+  head.innerHTML = COLS.map(c =>
+    `<th class="px-4 py-2 text-left whitespace-nowrap">${c.label}</th>`
+  ).join('');
+
+  const body = $('table-body');
+  body.innerHTML = rows.map((r, i) =>
+    `<tr class="${i % 2 === 0 ? '' : 'bg-gray-50'} hover:bg-indigo-50 transition">` +
+    COLS.map(c => {
+      const val = r[c.key];
+      const isUSD = c.key.endsWith('_usd');
+      const display = val == null ? '—' : isUSD ? fmtUSD(val) : Number.isInteger(val) ? val.toLocaleString() : val;
+      return `<td class="px-4 py-2 whitespace-nowrap">${display}</td>`;
+    }).join('') +
+    `</tr>`
+  ).join('');
+}
+
+// ─── event wiring ────────────────────────────────────────────────────────────
+$('load-btn').addEventListener('click', loadData);
+$('api-base').addEventListener('keydown', e => { if (e.key === 'Enter') loadData(); });
+
+// Auto-populate filter dropdowns when URL is entered
+$('api-base').addEventListener('change', () => populateFilters($('api-base').value.replace(/\/+$/, '')));
+
+// Pre-populate on load attempt (silent)
+window.addEventListener('DOMContentLoaded', () => {
+  populateFilters($('api-base').value.replace(/\/+$/, ''));
+});
+</script>
+</body>
+</html>
