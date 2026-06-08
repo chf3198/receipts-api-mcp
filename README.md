@@ -1,22 +1,24 @@
 # receipts-api-mcp
 
-FastAPI receipts statistics server with a built-in MCP layer and a public GitHub Pages testing dashboard.
+FastAPI receipts statistics server with a built-in MCP layer and a self-contained GitHub Pages testing dashboard.
 
 [![CI](https://github.com/chf3198/receipts-api-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/chf3198/receipts-api-mcp/actions/workflows/ci.yml)
 
-**Live dashboard:** https://chf3198.github.io/receipts-api-mcp/
+**Live dashboard (no setup required):** https://chf3198.github.io/receipts-api-mcp/
+
+> The dashboard loads CSV data directly from this repository and processes everything in the browser. No server, no account, no cold start — open the link and it works.
 
 ---
 
 ## Overview
 
-| Layer | Technology | Endpoint |
+| Layer | Technology | Notes |
 |---|---|---|
-| REST API | FastAPI | `http://localhost:8000` |
-| MCP server | fastapi-mcp (Streamable HTTP) | `http://localhost:8000/mcp` |
-| Testing dashboard | Vanilla JS + Chart.js (GitHub Pages) | https://chf3198.github.io/receipts-api-mcp/ |
+| **Demo dashboard** | Vanilla JS + Chart.js + Papa Parse (GitHub Pages) | Always-on, zero setup — visit the link above |
+| REST API | FastAPI | Run locally: `uv run receipts-api` → `http://localhost:8000` |
+| MCP server | fastapi-mcp (Streamable HTTP) | Available at `http://localhost:8000/mcp` when running locally |
 
-Data source: two monthly CSV files (`data/receipts_2025_01.csv`, `data/receipts_2025_02.csv`) loaded into memory at startup.
+Data source: `data/receipts_2025_01.csv` + `data/receipts_2025_02.csv` (also served from `docs/data/` for the dashboard).
 
 ---
 

@@ -6,86 +6,70 @@
   <title>Receipts API Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; }
     .chart-container { position: relative; height: 320px; }
+    details > summary { cursor: pointer; list-style: none; }
+    details > summary::before { content: "▶ "; font-size: 0.75rem; }
+    details[open] > summary::before { content: "▼ "; }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen">
-
-  <!-- Header -->
   <header class="bg-indigo-700 text-white shadow">
     <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
       <div>
         <h1 class="text-xl font-bold tracking-tight">Receipts API Dashboard</h1>
-        <p class="text-indigo-200 text-sm">Live statistics from the receipts-api-mcp server</p>
+        <p class="text-indigo-200 text-sm">Live demo — data processed entirely in your browser, hosted on GitHub Pages</p>
       </div>
       <div class="flex items-center gap-2">
-        <span id="status-dot" class="inline-block w-2.5 h-2.5 rounded-full bg-gray-300"></span>
-        <span id="status-label" class="text-sm text-indigo-100">Disconnected</span>
+        <span id="mode-badge" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500 text-white">
+          ● Embedded data
+        </span>
       </div>
     </div>
   </header>
-
-  <!-- Config bar -->
   <div class="bg-white border-b shadow-sm">
     <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-end gap-4">
-
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="api-base">API Base URL</label>
-        <input id="api-base" type="url" value="http://localhost:8000"
-          class="border rounded px-2 py-1 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-      </div>
-
       <div class="flex flex-col gap-1">
         <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="group-by">Group By</label>
         <select id="group-by" class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
           <option value="company">Company</option>
           <option value="product_category">Category</option>
-          <option value="company,product_category">Company + Category</option>
+          <option value="both">Company + Category</option>
         </select>
       </div>
-
       <div class="flex flex-col gap-1">
         <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="filter-company">Company</label>
         <select id="filter-company" class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
           <option value="">All</option>
         </select>
       </div>
-
       <div class="flex flex-col gap-1">
         <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="filter-category">Category</label>
         <select id="filter-category" class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
           <option value="">All</option>
         </select>
       </div>
-
       <div class="flex flex-col gap-1">
         <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="date-from">From</label>
         <input id="date-from" type="date" class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
       </div>
-
       <div class="flex flex-col gap-1">
         <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="date-to">To</label>
         <input id="date-to" type="date" class="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
       </div>
-
-      <button id="load-btn"
-        class="mt-auto px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded shadow transition">
-        Load
+      <button id="apply-btn" class="mt-auto px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded shadow transition">
+        Apply
       </button>
     </div>
   </div>
-
-  <!-- Error banner -->
   <div id="error-banner" class="hidden max-w-6xl mx-auto mt-4 px-4">
     <div class="bg-red-50 border border-red-300 text-red-700 rounded px-4 py-3 text-sm flex justify-between items-start gap-2">
       <span id="error-msg"></span>
       <button onclick="document.getElementById('error-banner').classList.add('hidden')" class="text-red-400 hover:text-red-600 font-bold leading-none">&times;</button>
     </div>
   </div>
-
-  <!-- KPI cards -->
   <div id="kpi-row" class="hidden max-w-6xl mx-auto px-4 mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
     <div class="bg-white rounded-lg shadow p-4 border-l-4 border-indigo-500">
       <p class="text-xs text-gray-500 uppercase tracking-wide font-semibold">Receipts</p>
@@ -104,8 +88,6 @@
       <p id="kpi-disc" class="text-2xl font-bold text-pink-700 mt-1">—</p>
     </div>
   </div>
-
-  <!-- Charts -->
   <div id="charts-row" class="hidden max-w-6xl mx-auto px-4 mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
     <div class="bg-white rounded-lg shadow p-4">
       <h2 class="text-sm font-semibold text-gray-600 mb-3">Total Revenue by Group (USD)</h2>
@@ -116,236 +98,201 @@
       <div class="chart-container"><canvas id="doughnut-chart"></canvas></div>
     </div>
   </div>
-
-  <!-- Table -->
-  <div id="table-wrap" class="hidden max-w-6xl mx-auto px-4 mt-6 mb-10">
+  <div id="table-wrap" class="hidden max-w-6xl mx-auto px-4 mt-6">
     <div class="bg-white rounded-lg shadow overflow-x-auto">
       <table class="min-w-full text-sm">
-        <thead class="bg-gray-100 text-gray-600 uppercase text-xs tracking-wide">
-          <tr id="table-head"></tr>
-        </thead>
+        <thead class="bg-gray-100 text-gray-600 uppercase text-xs tracking-wide"><tr id="table-head"></tr></thead>
         <tbody id="table-body" class="divide-y divide-gray-100"></tbody>
       </table>
     </div>
   </div>
-
-  <!-- Empty state -->
-  <div id="empty-state" class="max-w-6xl mx-auto px-4 mt-16 text-center text-gray-400">
-    <svg class="mx-auto mb-4 w-12 h-12 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-        d="M9 17v-2a4 4 0 00-4-4H3m18 0h-2a4 4 0 00-4 4v2m-6 4h6m-9-4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-    </svg>
-    <p class="font-medium">Enter your API base URL and press <strong>Load</strong></p>
-    <p class="text-sm mt-1">Make sure the receipts API is running locally: <code class="bg-gray-100 px-1 rounded">uv run receipts-api</code></p>
+  <div class="max-w-6xl mx-auto px-4 mt-8 mb-2">
+    <details class="bg-white rounded-lg shadow border border-gray-200">
+      <summary class="px-4 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 rounded-lg">
+        Live API mode (optional — requires local or deployed server)
+      </summary>
+      <div class="px-4 pb-4 pt-2 border-t border-gray-100">
+        <p class="text-xs text-gray-500 mb-3">Connect to a running Receipts API instance. Run locally with
+          <code class="bg-gray-100 px-1 rounded">uv run receipts-api</code> then enter
+          <code class="bg-gray-100 px-1 rounded">http://localhost:8000</code> below.
+        </p>
+        <div class="flex gap-2 items-end flex-wrap">
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide" for="api-url">API Base URL</label>
+            <input id="api-url" type="url" placeholder="http://localhost:8000"
+              class="border rounded px-2 py-1 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          </div>
+          <button id="api-connect-btn" class="px-4 py-1.5 bg-gray-700 hover:bg-gray-900 text-white text-sm font-medium rounded shadow transition">Connect</button>
+          <button id="api-disconnect-btn" class="hidden px-4 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-sm font-medium rounded shadow transition">Disconnect</button>
+          <span id="api-status" class="text-xs text-gray-400"></span>
+        </div>
+      </div>
+    </details>
   </div>
-
+  <footer class="max-w-6xl mx-auto px-4 py-6 text-xs text-gray-400 flex flex-wrap gap-4 justify-between">
+    <span>Data: 2025-01 + 2025-02 receipt exports (40 records)</span>
+    <span>
+      <a href="https://github.com/chf3198/receipts-api-mcp" class="underline hover:text-gray-600">GitHub Repo</a>
+      &nbsp;·&nbsp;
+      <a href="https://github.com/chf3198/receipts-api-mcp#mcp-connection" class="underline hover:text-gray-600">MCP Docs</a>
+    </span>
+  </footer>
 <script>
-// ─── state ───────────────────────────────────────────────────────────────────
-let barChart = null;
-let doughnutChart = null;
-
+const CSV_FILES = ['data/receipts_2025_01.csv', 'data/receipts_2025_02.csv'];
+const COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#14b8a6','#f97316','#ec4899','#64748b','#a3e635','#06b6d4','#d946ef','#fb923c','#22c55e'];
+let ALL_ROWS = [], liveApiBase = null, barChart = null, doughnutChart = null;
 const $ = id => document.getElementById(id);
+function fmtUSD(n) { return n == null ? '—' : '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function showError(msg) { $('error-msg').textContent = msg; $('error-banner').classList.remove('hidden'); }
 
-// ─── palette ─────────────────────────────────────────────────────────────────
-const COLORS = [
-  '#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6',
-  '#8b5cf6','#14b8a6','#f97316','#ec4899','#64748b',
-  '#a3e635','#06b6d4','#d946ef','#fb923c','#22c55e',
-];
-
-// ─── helpers ─────────────────────────────────────────────────────────────────
-function fmtUSD(n) {
-  return n == null ? '—' : '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+async function loadCSVs() {
+  const results = await Promise.all(CSV_FILES.map(f =>
+    fetch(f).then(r => { if (!r.ok) throw new Error(`Failed to load ${f}: ${r.status}`); return r.text(); })
+            .then(text => Papa.parse(text, {header:true, dynamicTyping:true, skipEmptyLines:true}).data)
+  ));
+  return results.flat();
 }
 
-function showError(msg) {
-  $('error-msg').textContent = msg;
-  $('error-banner').classList.remove('hidden');
+function populateDropdowns(rows) {
+  const companies  = [...new Set(rows.map(r => r.company))].sort();
+  const categories = [...new Set(rows.map(r => r.product_category))].sort();
+  const compSel = $('filter-company'), catSel = $('filter-category');
+  const prevC = compSel.value, prevK = catSel.value;
+  compSel.innerHTML = '<option value="">All</option>';
+  companies.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; if (c===prevC) o.selected=true; compSel.appendChild(o); });
+  catSel.innerHTML = '<option value="">All</option>';
+  categories.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; if (c===prevK) o.selected=true; catSel.appendChild(o); });
 }
 
-function setStatus(connected) {
-  const dot = $('status-dot');
-  const lbl = $('status-label');
-  dot.className = `inline-block w-2.5 h-2.5 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`;
-  lbl.textContent = connected ? 'Connected' : 'Disconnected';
+function applyFilters(rows) {
+  const co = $('filter-company').value, cat = $('filter-category').value;
+  const from = $('date-from').value, to = $('date-to').value;
+  return rows.filter(r =>
+    (!co   || r.company          === co)  &&
+    (!cat  || r.product_category === cat) &&
+    (!from || r.receipt_date     >= from) &&
+    (!to   || r.receipt_date     <= to)
+  );
 }
 
-function buildLabel(row, groupBy) {
-  const parts = [];
-  if (groupBy.includes('company') && row.company) parts.push(row.company);
-  if (groupBy.includes('product_category') && row.product_category) parts.push(row.product_category);
-  return parts.join(' / ') || 'All';
+function computeStats(rows, groupBy) {
+  const b = {};
+  for (const r of rows) {
+    const key = groupBy === 'both' ? `${r.company}|||${r.product_category}` :
+                groupBy === 'company' ? r.company : r.product_category;
+    if (!b[key]) b[key] = { company: groupBy!=='product_category'?r.company:null,
+                             product_category: groupBy!=='company'?r.product_category:null,
+                             receipt_count:0, sum_total_usd:0, sum_discount_usd:0,
+                             sum_tax_usd:0, sum_unit_price_usd:0, _t:[] };
+    const g = b[key];
+    g.receipt_count++; g.sum_total_usd+=r.total_usd||0; g.sum_discount_usd+=r.discount_usd||0;
+    g.sum_tax_usd+=r.tax_usd||0; g.sum_unit_price_usd+=r.unit_price_usd||0; g._t.push(r.total_usd||0);
+  }
+  return Object.values(b).map(({_t,...g}) => ({...g,
+    avg_total_usd: g.sum_total_usd/g.receipt_count,
+    min_total_usd: Math.min(..._t), max_total_usd: Math.max(..._t)
+  })).sort((a,z) => z.sum_total_usd - a.sum_total_usd);
 }
 
-// ─── populate filter dropdowns ───────────────────────────────────────────────
-async function populateFilters(base) {
-  try {
-    const [compRes, catRes] = await Promise.all([
-      fetch(`${base}/receipts/companies`),
-      fetch(`${base}/receipts/categories`),
-    ]);
-    if (!compRes.ok || !catRes.ok) return;
-    const companies = await compRes.json();
-    const categories = await catRes.json();
+function label(r) { return [r.company, r.product_category].filter(Boolean).join(' / '); }
 
-    const compSel = $('filter-company');
-    const catSel  = $('filter-category');
-    const prevComp = compSel.value;
-    const prevCat  = catSel.value;
-
-    // rebuild options (keep "All" first)
-    compSel.innerHTML = '<option value="">All</option>';
-    companies.forEach(c => {
-      const o = document.createElement('option');
-      o.value = c; o.textContent = c;
-      if (c === prevComp) o.selected = true;
-      compSel.appendChild(o);
-    });
-
-    catSel.innerHTML = '<option value="">All</option>';
-    categories.forEach(c => {
-      const o = document.createElement('option');
-      o.value = c; o.textContent = c;
-      if (c === prevCat) o.selected = true;
-      catSel.appendChild(o);
-    });
-  } catch (_) { /* silent — API might not be up yet */ }
+function renderKPIs(stats) {
+  const n = stats.reduce((s,r)=>s+r.receipt_count,0), t = stats.reduce((s,r)=>s+r.sum_total_usd,0),
+        d = stats.reduce((s,r)=>s+r.sum_discount_usd,0);
+  $('kpi-count').textContent=n.toLocaleString(); $('kpi-total').textContent=fmtUSD(t);
+  $('kpi-avg').textContent=fmtUSD(n?t/n:0); $('kpi-disc').textContent=fmtUSD(d);
 }
 
-// ─── main load ───────────────────────────────────────────────────────────────
-async function loadData() {
+function renderCharts(stats) {
+  const labels=stats.map(r=>label(r)), rev=stats.map(r=>+r.sum_total_usd.toFixed(2)),
+        cnt=stats.map(r=>r.receipt_count), col=labels.map((_,i)=>COLORS[i%COLORS.length]);
+  if(barChart) barChart.destroy(); if(doughnutChart) doughnutChart.destroy();
+  barChart = new Chart($('bar-chart'), {type:'bar',
+    data:{labels,datasets:[{label:'Total Revenue (USD)',data:rev,backgroundColor:col,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+             scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()}}}}});
+  doughnutChart = new Chart($('doughnut-chart'), {type:'doughnut',
+    data:{labels,datasets:[{data:cnt,backgroundColor:col,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,
+             plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}}});
+}
+
+function renderTable(stats) {
+  const COLS=[{key:'label',label:'Group'},{key:'receipt_count',label:'Count'},
+    {key:'sum_total_usd',label:'Total Rev'},{key:'avg_total_usd',label:'Avg Order'},
+    {key:'min_total_usd',label:'Min'},{key:'max_total_usd',label:'Max'},
+    {key:'sum_discount_usd',label:'Discounts'},{key:'sum_tax_usd',label:'Tax'},
+    {key:'sum_unit_price_usd',label:'Unit Price'}];
+  const rows = stats.map(r=>({...r,label:label(r)}));
+  $('table-head').innerHTML = COLS.map(c=>`<th class="px-4 py-2 text-left whitespace-nowrap">${c.label}</th>`).join('');
+  $('table-body').innerHTML = rows.map((r,i)=>
+    `<tr class="${i%2?'bg-gray-50':''} hover:bg-indigo-50 transition">`+
+    COLS.map(c=>{const v=r[c.key],isUSD=c.key.endsWith('_usd'),
+      d=v==null?'—':isUSD?fmtUSD(v):Number.isInteger(v)?v.toLocaleString():v;
+      return `<td class="px-4 py-2 whitespace-nowrap">${d}</td>`;}).join('')+`</tr>`
+  ).join('');
+}
+
+function renderAll(stats) {
+  if (!stats.length) { showError('No data for the selected filters.'); return; }
   $('error-banner').classList.add('hidden');
-  const base    = $('api-base').value.replace(/\/+$/, '');
-  const groupBy = $('group-by').value;
-  const company = $('filter-company').value;
-  const cat     = $('filter-category').value;
-  const from    = $('date-from').value;
-  const to      = $('date-to').value;
+  renderKPIs(stats); renderCharts(stats); renderTable(stats);
+  $('kpi-row').classList.remove('hidden'); $('charts-row').classList.remove('hidden'); $('table-wrap').classList.remove('hidden');
+}
 
-  const params = new URLSearchParams({ group_by: groupBy });
-  if (company) params.set('company', company);
-  if (cat)     params.set('product_category', cat);
-  if (from)    params.set('purchase_date_from', from);
-  if (to)      params.set('purchase_date_to', to);
+async function fetchFromApi() {
+  const gv=$('group-by').value, apiGv=gv==='both'?'company,product_category':gv;
+  const co=$('filter-company').value, cat=$('filter-category').value,
+        from=$('date-from').value, to=$('date-to').value;
+  const p=new URLSearchParams({group_by:apiGv});
+  if(co) p.set('company',co); if(cat) p.set('product_category',cat);
+  if(from) p.set('purchase_date_from',from); if(to) p.set('purchase_date_to',to);
+  const res=await fetch(`${liveApiBase}/receipts/stats?${p}`);
+  if(!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  return res.json();
+}
 
-  let data;
+async function refresh() {
+  $('error-banner').classList.add('hidden');
   try {
-    const res = await fetch(`${base}/receipts/stats?${params}`);
-    if (!res.ok) { showError(`API error ${res.status}: ${await res.text()}`); setStatus(false); return; }
-    data = await res.json();
-    setStatus(true);
-  } catch (e) {
-    showError(`Could not reach API at ${base}. Is the server running?`);
-    setStatus(false);
-    return;
-  }
-
-  await populateFilters(base);
-
-  if (!data.length) {
-    showError('No data returned for the selected filters.');
-    return;
-  }
-
-  renderKPIs(data);
-  renderCharts(data, groupBy);
-  renderTable(data, groupBy);
-
-  $('empty-state').classList.add('hidden');
-  $('kpi-row').classList.remove('hidden');
-  $('charts-row').classList.remove('hidden');
-  $('table-wrap').classList.remove('hidden');
+    const stats = liveApiBase ? await fetchFromApi()
+                               : computeStats(applyFilters(ALL_ROWS), $('group-by').value);
+    renderAll(stats);
+  } catch(e) { showError(e.message); }
 }
 
-// ─── KPI cards ───────────────────────────────────────────────────────────────
-function renderKPIs(data) {
-  const totalCount = data.reduce((s, r) => s + (r.receipt_count || 0), 0);
-  const totalRev   = data.reduce((s, r) => s + (r.sum_total_usd || 0), 0);
-  const totalDisc  = data.reduce((s, r) => s + (r.sum_discount_usd || 0), 0);
-  const avgOrder   = totalCount ? totalRev / totalCount : 0;
+$('api-connect-btn').addEventListener('click', async () => {
+  const url=$('api-url').value.replace(/\/+$/,''); if(!url) return;
+  $('api-status').textContent='Connecting…';
+  try {
+    const [cr,kr]= await Promise.all([fetch(`${url}/receipts/companies`),fetch(`${url}/receipts/categories`)]);
+    if(!cr.ok) throw new Error(`${cr.status}`);
+    const [companies,categories]=[await cr.json(), kr.ok?await kr.json():[]];
+    const cs=$('filter-company'), ks=$('filter-category');
+    cs.innerHTML='<option value="">All</option>'; companies.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;cs.appendChild(o);});
+    ks.innerHTML='<option value="">All</option>'; categories.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;ks.appendChild(o);});
+    liveApiBase=url; $('api-status').textContent=`✓ Connected to ${url}`;
+    $('api-connect-btn').classList.add('hidden'); $('api-disconnect-btn').classList.remove('hidden');
+    $('mode-badge').textContent='● Live API';
+    $('mode-badge').className='inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-500 text-white';
+    await refresh();
+  } catch(e) { $('api-status').textContent=`✗ Failed: ${e.message}`; }
+});
 
-  $('kpi-count').textContent = totalCount.toLocaleString();
-  $('kpi-total').textContent = fmtUSD(totalRev);
-  $('kpi-avg').textContent   = fmtUSD(avgOrder);
-  $('kpi-disc').textContent  = fmtUSD(totalDisc);
-}
+$('api-disconnect-btn').addEventListener('click', ()=>{
+  liveApiBase=null; $('api-connect-btn').classList.remove('hidden'); $('api-disconnect-btn').classList.add('hidden');
+  $('api-url').value=''; $('api-status').textContent='';
+  $('mode-badge').textContent='● Embedded data';
+  $('mode-badge').className='inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500 text-white';
+  populateDropdowns(ALL_ROWS); refresh();
+});
 
-// ─── charts ──────────────────────────────────────────────────────────────────
-function renderCharts(data, groupBy) {
-  const labels  = data.map(r => buildLabel(r, groupBy));
-  const revenue = data.map(r => +(r.sum_total_usd || 0).toFixed(2));
-  const counts  = data.map(r => r.receipt_count || 0);
-  const bgColors = labels.map((_, i) => COLORS[i % COLORS.length]);
+$('apply-btn').addEventListener('click', refresh);
+$('group-by').addEventListener('change', refresh);
 
-  // Bar chart
-  if (barChart) barChart.destroy();
-  barChart = new Chart($('bar-chart'), {
-    type: 'bar',
-    data: { labels, datasets: [{ label: 'Total Revenue (USD)', data: revenue, backgroundColor: bgColors, borderRadius: 4 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { y: { ticks: { callback: v => '$' + v.toLocaleString() } } },
-    },
-  });
-
-  // Doughnut chart
-  if (doughnutChart) doughnutChart.destroy();
-  doughnutChart = new Chart($('doughnut-chart'), {
-    type: 'doughnut',
-    data: { labels, datasets: [{ data: counts, backgroundColor: bgColors, hoverOffset: 8 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } },
-    },
-  });
-}
-
-// ─── table ───────────────────────────────────────────────────────────────────
-function renderTable(data, groupBy) {
-  const COLS = [
-    { key: 'label',               label: 'Group' },
-    { key: 'receipt_count',       label: 'Count' },
-    { key: 'sum_total_usd',       label: 'Total Rev' },
-    { key: 'avg_total_usd',       label: 'Avg Order' },
-    { key: 'min_total_usd',       label: 'Min' },
-    { key: 'max_total_usd',       label: 'Max' },
-    { key: 'sum_discount_usd',    label: 'Discounts' },
-    { key: 'sum_tax_usd',         label: 'Tax' },
-    { key: 'sum_unit_price_usd',  label: 'Unit Price' },
-  ];
-
-  // add label field
-  const rows = data.map(r => ({ ...r, label: buildLabel(r, groupBy) }));
-
-  const head = $('table-head');
-  head.innerHTML = COLS.map(c =>
-    `<th class="px-4 py-2 text-left whitespace-nowrap">${c.label}</th>`
-  ).join('');
-
-  const body = $('table-body');
-  body.innerHTML = rows.map((r, i) =>
-    `<tr class="${i % 2 === 0 ? '' : 'bg-gray-50'} hover:bg-indigo-50 transition">` +
-    COLS.map(c => {
-      const val = r[c.key];
-      const isUSD = c.key.endsWith('_usd');
-      const display = val == null ? '—' : isUSD ? fmtUSD(val) : Number.isInteger(val) ? val.toLocaleString() : val;
-      return `<td class="px-4 py-2 whitespace-nowrap">${display}</td>`;
-    }).join('') +
-    `</tr>`
-  ).join('');
-}
-
-// ─── event wiring ────────────────────────────────────────────────────────────
-$('load-btn').addEventListener('click', loadData);
-$('api-base').addEventListener('keydown', e => { if (e.key === 'Enter') loadData(); });
-
-// Auto-populate filter dropdowns when URL is entered
-$('api-base').addEventListener('change', () => populateFilters($('api-base').value.replace(/\/+$/, '')));
-
-// Pre-populate on load attempt (silent)
-window.addEventListener('DOMContentLoaded', () => {
-  populateFilters($('api-base').value.replace(/\/+$/, ''));
+window.addEventListener('DOMContentLoaded', async ()=>{
+  try { ALL_ROWS=await loadCSVs(); populateDropdowns(ALL_ROWS); await refresh(); }
+  catch(e) { showError(`Could not load data: ${e.message}`); }
 });
 </script>
 </body>
