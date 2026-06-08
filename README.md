@@ -138,12 +138,28 @@ receipts-api-mcp/
 │       └── routers/
 │           ├── receipts.py    # /receipts endpoints
 │           └── stats.py       # /receipts/stats grouped aggregates
-├── data/                      # source CSV files
+├── data/                      # CSV source files (API runtime reads here)
 ├── docs/                      # GitHub Pages dashboard (zero-build HTML/JS)
+│   ├── assets/                # dashboard images
+│   ├── data/                  # CSV copy for browser fetch (Pages same-origin)
+│   └── index.html             # self-contained dashboard
+├── assets/
+│   └── interview/             # original interview brief + setup instructions
 ├── tests/
 │   └── test_api.py            # 16 pytest smoke tests (TestClient)
 ├── pyproject.toml             # uv + ruff + pytest config
 ├── uv.lock                    # deterministic lockfile
 └── .python-version            # pins Python 3.11 for uv
 ```
+
+## Data Layout
+
+The CSV data exists in two locations intentionally — each serves a different consumer:
+
+| Path | Consumer | Notes |
+|------|----------|-------|
+| `data/` | **API runtime** | `data_loader.py` reads `data/*.csv` at startup; this is the source of truth for all API responses |
+| `docs/data/` | **GitHub Pages dashboard** | The dashboard (`docs/index.html`) fetches CSV files via relative path in the browser; GitHub Pages same-origin policy requires a local copy under `docs/` |
+
+These two copies must remain in sync. The `assets/interview/` folder contains the original interview brief and setup instructions (not consumed by any runtime).
 
