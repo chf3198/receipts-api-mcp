@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_mcp import FastApiMCP
 
 from receipts_api.routers import receipts, stats
 
@@ -36,6 +37,11 @@ app.add_middleware(
 # is matched before /receipts/{receipt_id}.
 app.include_router(stats.router)
 app.include_router(receipts.router)
+
+# Mount MCP server — exposes all FastAPI routes as MCP tools at GET /mcp
+# using Streamable HTTP transport (MCP spec 2025-03-26).
+mcp = FastApiMCP(app)
+mcp.mount_http()
 
 
 def main() -> None:
