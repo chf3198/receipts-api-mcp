@@ -4,8 +4,21 @@ __pycache__/
 *.pyo
 .env
 
-# Virtual environment
+# Virtual environment (uv-managed)
 .venv/
+
+# uv cache
+.uv/
+
+# Test/coverage artefacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build
+dist/
+build/
+*.egg-info/
 
 # VS Code
 .vscode/
@@ -13,3 +26,5 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# .python-version IS tracked (pins runtime for uv)
