@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or Discussion
+    url: https://github.com/chf3198/receipts-api-mcp/discussions
+    about: Ask questions and discuss ideas here rather than opening an issue.
