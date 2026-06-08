@@ -1,5 +1,7 @@
 # receipts-api-mcp
 
+![banner](docs/assets/banner.png)
+
 FastAPI receipts statistics server with a built-in MCP layer and a self-contained GitHub Pages testing dashboard.
 
 [![CI](https://github.com/chf3198/receipts-api-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/chf3198/receipts-api-mcp/actions/workflows/ci.yml)
