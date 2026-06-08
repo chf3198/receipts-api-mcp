@@ -1,0 +1,7 @@
+Load the data into the API Server.
+Create API GET functionality for the serving of the receipt statistics (/receipts/statistics) 
+                    by company
+                    by product category
+
+Create filtering in the serving functionality for date range 
+                        for product category
