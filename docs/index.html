@@ -291,7 +291,17 @@ $('apply-btn').addEventListener('click', refresh);
 $('group-by').addEventListener('change', refresh);
 
 window.addEventListener('DOMContentLoaded', async ()=>{
-  try { ALL_ROWS=await loadCSVs(); populateDropdowns(ALL_ROWS); await refresh(); }
+  try {
+    ALL_ROWS=await loadCSVs();
+    populateDropdowns(ALL_ROWS);
+    const dates = ALL_ROWS.map(r=>r.receipt_date).filter(Boolean).sort();
+    const minDate = dates[0], maxDate = dates[dates.length-1];
+    ['date-from','date-to'].forEach(id=>{
+      $( id).min = minDate;
+      $(id).max = maxDate;
+    });
+    await refresh();
+  }
   catch(e) { showError(`Could not load data: ${e.message}`); }
 });
 </script>
