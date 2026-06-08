@@ -1,0 +1,21 @@
+receipt_id,receipt_date,company,product_category,service_name,description,quantity,unit_price_usd,discount_usd,tax_usd,total_usd,status
+2025-01-001,2025-01-31,Northstar Software Co.,Cloud Platform,Cloud Hosting,Monthly cloud infrastructure hosting,1,1175.00,0.00,94.00,1269.00,Paid
+2025-01-002,2025-01-31,Northstar Software Co.,Cloud Platform,Managed Database,Managed relational database service,1,850.00,0.00,68.00,918.00,Paid
+2025-01-003,2025-01-31,Northstar Software Co.,Security,Security Monitoring,Application and infrastructure security monitoring,1,665.00,0.00,53.20,718.20,Paid
+2025-01-004,2025-01-31,Northstar Software Co.,Engineering Services,Feature Development,Reserved feature development capacity,1,1850.00,0.00,148.00,1998.00,Paid
+2025-01-005,2025-01-31,Blue Harbor Office Supply,Office Supplies,Copy Paper,Bulk cartons of recycled printer paper,1,185.00,0.00,14.80,199.80,Paid
+2025-01-006,2025-01-31,Blue Harbor Office Supply,Office Supplies,Printer Toner,High-yield toner cartridge pack,1,445.00,0.00,35.60,480.60,Paid
+2025-01-007,2025-01-31,Blue Harbor Office Supply,Furniture,Ergonomic Chair,Adjustable workstation seating,1,810.00,0.00,64.80,874.80,Paid
+2025-01-008,2025-01-31,Blue Harbor Office Supply,Breakroom,Coffee Service,Monthly coffee and beverage restock,1,195.00,0.00,15.60,210.60,Paid
+2025-01-009,2025-01-31,Summit Industrial Tools,Safety Equipment,Protective Gloves,Cut-resistant shop gloves,1,335.00,0.00,26.80,361.80,Paid
+2025-01-010,2025-01-31,Summit Industrial Tools,Power Tools,Cordless Drill Kit,Commercial cordless drill replacement kit,1,970.00,0.00,77.60,1047.60,Paid
+2025-01-011,2025-01-31,Summit Industrial Tools,Maintenance Supplies,Lubricant Pack,Machine lubricant and cleaning fluids,1,225.00,0.00,18.00,243.00,Paid
+2025-01-012,2025-01-31,Summit Industrial Tools,Measurement Tools,Digital Calipers,Precision measurement tool set,1,485.00,0.00,38.80,523.80,Paid
+2025-01-013,2025-01-31,Greenfield Catering Group,Catering,Team Lunch Buffet,Catered lunch service for staff meeting,1,730.00,0.00,58.40,788.40,Paid
+2025-01-014,2025-01-31,Greenfield Catering Group,Pantry Supplies,Snack Assortment,Monthly pantry snack replenishment,1,310.00,0.00,24.80,334.80,Paid
+2025-01-015,2025-01-31,Greenfield Catering Group,Beverages,Sparkling Water Cases,Office beverage stock order,1,165.00,0.00,13.20,178.20,Paid
+2025-01-016,2025-01-31,Greenfield Catering Group,Events,Client Reception Service,Food and service for client reception,1,1450.00,40.00,112.80,1522.80,Paid
+2025-01-017,2025-01-31,MetroFleet Logistics,Shipping,Ground Freight,Regional ground freight shipment,1,490.00,0.00,39.20,529.20,Paid
+2025-01-018,2025-01-31,MetroFleet Logistics,Shipping,Express Delivery,Priority overnight package delivery,1,205.00,0.00,16.40,221.40,Paid
+2025-01-019,2025-01-31,MetroFleet Logistics,Fleet Services,Vehicle Maintenance,Scheduled fleet vehicle maintenance,1,875.00,40.00,66.80,901.80,Paid
+2025-01-020,2025-01-31,MetroFleet Logistics,Warehousing,Pallet Storage,Monthly warehouse pallet storage,1,645.00,0.00,51.60,696.60,Paid

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: receipts-api-mcp
+    runtime: python
+    buildCommand: pip install uv && uv sync
+    startCommand: uv run uvicorn receipts_api.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
