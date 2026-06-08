@@ -111,6 +111,21 @@ uv run ruff format .  # format
 
 ---
 
+## Security
+
+This is a **public, read-only demo API** — authentication is intentionally absent by design.
+
+| Aspect | Posture |
+|---|---|
+| CORS | `allow_origins=["*"]`, `allow_methods=["GET"]` — required for GitHub Pages dashboard access |
+| Auth | None — all endpoints are public read-only; no PII or sensitive data |
+| Data | Synthetic sample CSV — no real financial records or personal information |
+| Dependencies | Audited via `pip-audit` + Dependabot — no known CVEs |
+| CDN integrity | SRI hashes on Chart.js and PapaParse script tags |
+| Branch protection | `master` requires PR + CI green before merge |
+
+A full Phase-0 security audit (threat model, automated scans, cross-family fleet red-team) completed 2026-06-08. See [SECURITY.md](SECURITY.md) for the full posture report.
+
 ## Project Structure
 
 ```
